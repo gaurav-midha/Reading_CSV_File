@@ -71,6 +71,7 @@ module Filter
      args.each do |elem|        
       if elem.class == Hash
         if elem.has_key?(:only)
+          flag = 1
           h = {}
           cal_met.each do |cal_met1|
            h[cal_met1] = elem[:only]
@@ -84,6 +85,7 @@ module Filter
             arr << h
           end
         elsif elem.has_key?(:except)
+          flag = 1
           h = {}
           cal_met.each do |cal_met1|
            h[cal_met1] = elem[:except]
@@ -102,7 +104,8 @@ module Filter
       else
         cal_met << elem
       end
-      if flag == 0
+     end
+     if flag == 0
        h = {}
        cal_met.each do |cal_met1|
         h[cal_met1] = []
@@ -115,20 +118,20 @@ module Filter
          arr = send :class_variable_get, "@@bef_except_elem"
          arr << h
        end
-      end
      end
     end
     def after_method(*args)
-      p args
       arr = []
+      flag = 0
       cal_met = []
       args.each do |elem|       
         if elem.class == Hash
           if elem.has_key?(:only)
             h = {}
-          cal_met.each do |cal_met1|
-           h[cal_met1] = elem[:only]
-          end
+            flag = 1            
+            cal_met.each do |cal_met1|
+             h[cal_met1] = elem[:only]
+            end
             begin
               arr = send :class_variable_get, "@@after_only_elem"
               arr << h
@@ -139,6 +142,7 @@ module Filter
             end
           elsif elem.has_key?(:except)
           h = {}
+          flag = 1
           cal_met.each do |cal_met1|
            h[cal_met1] = elem[:except]
           end
@@ -157,13 +161,27 @@ module Filter
           cal_met << elem
         end
       end
+      if flag == 0
+       h = {}
+       cal_met.each do |cal_met1|
+        h[cal_met1] = []
+       end
+       begin
+         arr = send :class_variable_get, "@@after_except_elem"
+         arr << h
+       rescue
+         send :class_variable_set, "@@after_except_elem", []
+         arr = send :class_variable_get, "@@after_except_elem"
+         arr << h
+       end
+      end
     end
   end 
 end
 class Play
   include Filter
   before_method "a", "c", :only=>["fname"] 
-  after_method  "b" , :except=>["fname"]
+  after_method  "b", :except=>["fname"]
   def fname
     puts "fname"
   end
